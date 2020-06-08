@@ -206,7 +206,7 @@ func (p *ProbeManager) SystemConfigProbes() error {
 
 	// Check Kernel Config is available or not.
 	// We are replicating BPFTools logic here to check if kernel config is available
-	// https://elixir.bootlin.com/linux/latest/source/tools/bpf/bpftool/feature.c#L390
+	// https://elixir.bootlin.com/linux/v5.7/source/tools/bpf/bpftool/feature.c#L390
 	info := unix.Utsname{}
 	err := unix.Uname(&info)
 	var release string
