@@ -29,7 +29,7 @@ shift 5
 
 registries=("${@}")
 
-image_tag="$("${root_dir}/scripts/make-image-tag.sh" "${image_dir}")"
+image_tag="$("${root_dir}/images/scripts/make-image-tag.sh" "${image_dir}")"
 
 tag_args=()
 for registry in "${registries[@]}" ; do
