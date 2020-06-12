@@ -10,14 +10,14 @@ ARG NOSTRIP
 ARG LOCKDEBUG
 
 RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium --mount=target=/root/.cache,type=cache --mount=target=/go/pkg/mod,type=cache \
-  make NOSTRIP=$NOSTRIP LOCKDEBUG=$LOCKDEBUG PKG_BUILD=1 \
-  SKIP_DOCS=true DESTDIR=/out/linux/amd64 clean-container build-container install-container
+  make clean-container build-container install-container \
+    NOSTRIP=$NOSTRIP LOCKDEBUG=$LOCKDEBUG PKG_BUILD=1 SKIP_DOCS=true DESTDIR=/out/linux/amd64
 
 RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium --mount=target=/root/.cache,type=cache --mount=target=/go/pkg/mod,type=cache \
   env GOARCH=arm64 CC=aarch64-linux-gnu-gcc \
-  make NOSTRIP=$NOSTRIP LOCKDEBUG=$LOCKDEBUG PKG_BUILD=1 \
-  HOST_CC=aarch64-linux-gnu-gcc HOST_STRIP=aarch64-linux-gnu-strip \
-  SKIP_DOCS=true DESTDIR=/out/linux/arm64 clean-container build-container install-container
+    make clean-container build-container install-container \
+      NOSTRIP=$NOSTRIP LOCKDEBUG=$LOCKDEBUG PKG_BUILD=1 SKIP_DOCS=true DESTDIR=/out/linux/arm64 \
+      HOST_CC=aarch64-linux-gnu-gcc HOST_STRIP=aarch64-linux-gnu-strip
 
 FROM ${CILIUM_RUNTIME_IMAGE}
 ARG TARGETPLATFORM
