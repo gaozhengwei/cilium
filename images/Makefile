@@ -32,3 +32,6 @@ cilium-image: .buildx_builder
 
 operator-image: .buildx_builder
 	cd .. && git archive @ | docker buildx build --tag $(firstword $(REGISTRIES))/operator:$(shell scripts/make-image-tag.sh) --platform linux/amd64,linux/arm64 --builder "$$(cat images/.buildx_builder)" --output $(OUTPUT) --file images/operator/Dockerfile -
+
+hubble-relay-image: .buildx_builder
+	cd .. && git archive @ | docker buildx build --tag $(firstword $(REGISTRIES))/hubble-relay:$(shell scripts/make-image-tag.sh) --platform linux/amd64,linux/arm64 --builder "$$(cat images/.buildx_builder)" --output $(OUTPUT) --file images/hubble-relay/Dockerfile -
