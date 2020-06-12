@@ -15,6 +15,9 @@
 #define ICMP6_ND_TARGET_OFFSET (sizeof(struct ipv6hdr) + sizeof(struct icmp6hdr))
 #define ICMP6_ND_OPTS (sizeof(struct ipv6hdr) + sizeof(struct icmp6hdr) + sizeof(struct in6_addr))
 
+#define ICMP6_NS_MSG_TYPE 135
+#define ICMP6_NA_MSG_TYPE 136
+
 /* If not specific action is specified, drop unknown neighbour solication
  * messages */
 #ifndef ACTION_UNKNOWN_ICMP6_NS
@@ -392,7 +395,7 @@ static __always_inline int icmp6_handle(struct __ctx_buff *ctx, int nh_off,
 	BPF_V6(router_ip, ROUTER_IP);
 
 	switch(type) {
-	case 135:
+	case ICMP6_NS_MSG_TYPE:
 		return icmp6_handle_ns(ctx, nh_off, direction);
 	case ICMPV6_ECHO_REQUEST:
 		if (!ipv6_addrcmp((union v6addr *) &ip6->daddr, &router_ip))

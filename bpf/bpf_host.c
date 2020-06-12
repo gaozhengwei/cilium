@@ -489,6 +489,37 @@ int tail_handle_ipv6_from_netdev(struct __ctx_buff *ctx)
 {
 	return tail_handle_ipv6(ctx, false);
 }
+
+# ifdef ENABLE_HOST_FIREWALL
+static __always_inline int
+handle_to_netdev_ipv6(struct __ctx_buff *ctx)
+{
+	void *data, *data_end;
+	struct ipv6hdr *ip6;
+	__u8 nexthdr, type;
+	__u32 srcID = 0;
+	int hdrlen;
+
+	if (!revalidate_data(ctx, &data, &data_end, &ip6))
+		return DROP_INVALID;
+
+	nexthdr = ip6->nexthdr;
+	hdrlen = ipv6_hdrlen(ctx, ETH_HLEN, &nexthdr);
+	if (hdrlen < 0)
+		return hdrlen;
+
+	if (unlikely(nexthdr == IPPROTO_ICMPV6)) {
+		type = icmp6_load_type(ctx, ETH_HLEN);
+		if (type == ICMP6_NS_MSG_TYPE || type == ICMP6_NA_MSG_TYPE)
+			return CTX_ACT_OK;
+	}
+
+	/* to-netdev is attached to the egress path of the native
+	 * device. */
+	srcID = ipcache_lookup_srcid6(ctx);
+	return ipv6_host_policy_egress(ctx, srcID);
+}
+# endif
 #endif /* ENABLE_IPV6 */
 
 #ifdef ENABLE_IPV4
@@ -1221,10 +1252,7 @@ int to_netdev(struct __ctx_buff *ctx __maybe_unused)
 # endif
 # ifdef ENABLE_IPV6
 	case bpf_htons(ETH_P_IPV6):
-		/* to-netdev is attached to the egress path of the native
-		 * device. */
-		srcID = ipcache_lookup_srcid6(ctx);
-		ret = ipv6_host_policy_egress(ctx, srcID);
+		ret = handle_to_netdev_ipv6(ctx);
 		break;
 # endif
 # ifdef ENABLE_IPV4
