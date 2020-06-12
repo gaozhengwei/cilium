@@ -25,6 +25,7 @@
 # undef ENABLE_HOST_FIREWALL
 #endif
 
+#include "lib/tailcall.h"
 #include "lib/utils.h"
 #include "lib/common.h"
 #include "lib/arp.h"
@@ -1200,6 +1201,28 @@ int from_host(struct __ctx_buff *ctx)
 	return handle_netdev(ctx, true);
 }
 
+#if defined(ENABLE_NODEPORT) && \
+	(!defined(ENABLE_DSR) || \
+	 (defined(ENABLE_DSR) && defined(ENABLE_DSR_HYBRID)))
+# define ENABLE_NAT_FWD 1
+#endif
+#ifdef ENABLE_NAT_FWD
+declare_tailcall_if(is_defined(ENABLE_HOST_FIREWALL),
+		    CILIUM_CALL_DIRECT_NODEPORT_NAT)
+int tail_handle_nat_fwd(struct __ctx_buff *ctx)
+{
+	int ret;
+
+	if ((ctx->mark & MARK_MAGIC_SNAT_DONE) == MARK_MAGIC_SNAT_DONE)
+		return CTX_ACT_OK;
+	ret = nodeport_nat_fwd(ctx, false);
+	if (IS_ERR(ret))
+		return send_drop_notify_error(ctx, 0, ret, CTX_ACT_DROP,
+					      METRIC_EGRESS);
+	return ret;
+}
+#endif /* ENABLE_NAT_FWD */
+
 __section("to-netdev")
 int to_netdev(struct __ctx_buff *ctx __maybe_unused)
 {
@@ -1241,28 +1264,24 @@ int to_netdev(struct __ctx_buff *ctx __maybe_unused)
 		ret = DROP_UNKNOWN_L3;
 		break;
 	}
-
 out:
 	if (IS_ERR(ret))
-		return send_drop_notify_error(ctx, srcID, ret, CTX_ACT_DROP,
-					      METRIC_EGRESS);
+		goto out_drop;
 #else
 	ret = CTX_ACT_OK;
 #endif /* ENABLE_HOST_FIREWALL */
 
-#if defined(ENABLE_NODEPORT) && \
-	(!defined(ENABLE_DSR) || \
-	 (defined(ENABLE_DSR) && defined(ENABLE_DSR_HYBRID)))
-	if ((ctx->mark & MARK_MAGIC_SNAT_DONE) != MARK_MAGIC_SNAT_DONE) {
-		ret = nodeport_nat_fwd(ctx, false);
-		if (IS_ERR(ret))
-			return send_drop_notify_error(ctx, 0, ret,
-						      CTX_ACT_DROP,
-						      METRIC_EGRESS);
-	}
-#endif
-
+#ifdef ENABLE_NAT_FWD
+	invoke_tailcall_if(is_defined(ENABLE_HOST_FIREWALL),
+			   CILIUM_CALL_DIRECT_NODEPORT_NAT,
+			   tail_handle_nat_fwd);
+	if (IS_ERR(ret))
+		goto out_drop;
+#endif /* ENABLE_NAT_FWD */
 	return ret;
+out_drop: __maybe_unused
+	return send_drop_notify_error(ctx, srcID, ret, CTX_ACT_DROP,
+				      METRIC_EGRESS);
 }
 
 __section("to-host")
