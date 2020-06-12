@@ -29,3 +29,6 @@ builder-image: .buildx_builder
 
 cilium-image: .buildx_builder
 	cd .. && git archive @ | docker buildx build --tag $(firstword $(REGISTRIES))/cilium:$(shell scripts/make-image-tag.sh) --platform linux/amd64,linux/arm64 --builder "$$(cat images/.buildx_builder)" --output $(OUTPUT) --file images/cilium/Dockerfile -
+
+operator-image: .buildx_builder
+	cd .. && git archive @ | docker buildx build --tag $(firstword $(REGISTRIES))/operator:$(shell scripts/make-image-tag.sh) --platform linux/amd64,linux/arm64 --builder "$$(cat images/.buildx_builder)" --output $(OUTPUT) --file images/operator/Dockerfile -
