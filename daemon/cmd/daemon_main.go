@@ -1550,7 +1550,7 @@ func initClockSourceOption() {
 	}
 }
 
-func initKubeProxyReplacementOptions() {
+func initKubeProxyReplacementOptions() (strict bool) {
 	if option.Config.KubeProxyReplacement != option.KubeProxyReplacementStrict &&
 		option.Config.KubeProxyReplacement != option.KubeProxyReplacementPartial &&
 		option.Config.KubeProxyReplacement != option.KubeProxyReplacementProbe &&
@@ -1584,7 +1584,7 @@ func initKubeProxyReplacementOptions() {
 	probesManager := probes.NewProbeManager()
 
 	// strict denotes to panic if any to-be enabled feature cannot be enabled
-	strict := option.Config.KubeProxyReplacement != option.KubeProxyReplacementProbe
+	strict = option.Config.KubeProxyReplacement != option.KubeProxyReplacementProbe
 
 	if option.Config.KubeProxyReplacement == option.KubeProxyReplacementProbe ||
 		option.Config.KubeProxyReplacement == option.KubeProxyReplacementStrict {
@@ -1743,6 +1743,12 @@ func initKubeProxyReplacementOptions() {
 		}
 	}
 
+	return
+}
+
+// detectDevicesForNodePortAndHostFirewall tries to detect bpf_host devices
+// (if needed).
+func detectDevicesForNodePortAndHostFirewall(strict bool) {
 	detectNodePortDevs := option.Config.EnableNodePort && len(option.Config.Devices) == 0
 	detectDirectRoutingDev := option.Config.EnableNodePort &&
 		option.Config.DirectRoutingDevice == ""
@@ -1766,7 +1772,11 @@ func initKubeProxyReplacementOptions() {
 			l.Info("Using auto-derived devices for BPF node port")
 		}
 	}
+}
 
+// finishKubeProxyReplacementInit finishes initialization of kube-proxy
+// replacement after all devices are known.
+func finishKubeProxyReplacementInit() {
 	if !option.Config.EnableNodePort {
 		// Make sure that NodePort dependencies are disabled
 		disableNodePort()
