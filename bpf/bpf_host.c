@@ -365,13 +365,11 @@ handle_ipv6(struct __ctx_buff *ctx, __u32 secctx, const bool from_host)
 	if (hdrlen < 0)
 		return hdrlen;
 
-#ifdef HANDLE_NS
 	if (!skip_redirect && unlikely(nexthdr == IPPROTO_ICMPV6)) {
 		ret = icmp6_handle(ctx, ETH_HLEN, ip6, METRIC_INGRESS);
 		if (IS_ERR(ret))
 			return ret;
 	}
-#endif
 
 	if (from_host && !skip_redirect) {
 		/* If we are attached to cilium_host at egress, this will
