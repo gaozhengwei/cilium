@@ -411,13 +411,20 @@ right at the XDP layer are not visible in tcpdump since packet taps come at a mu
 later stage in the networking stack. Cilium's monitor or metric counters can be used
 instead for gaining visibility.
 
-NodePort Device, Port and Bind settings
+NodePort Devices, Port and Bind settings
 ***************************************
 
 When running Cilium's BPF kube-proxy replacement, by default, a NodePort or
-ExternalIPs service will be accessible through the IP address of a native device
-which has the default route on the host. To change the device, set its name in
-the ``global.devices`` helm option.
+LoadBalancer service or a service with externalIPs will be accessible through
+the IP addresses of native devices which either have the default route on
+the host or have Kubernetes InternalIP or ExternalIP assigned. To change
+the devices, set their names in the ``global.devices`` helm option, e.g.
+``-set global.devices={eth0,eth1,eth2}``.
+
+When multiple devices are used, only one device can be used for direct routing
+between Cilium nodes. The device can be set in the
+``global.nodePort.directRoutingDevice`` helm option. If it is not specified,
+Cilium will use a device with Kubernetes InternalIP or ExternalIP.
 
 In addition, thanks to the :ref:`host-services` feature, the NodePort service can
 be accessed by default from a host or a pod within a cluster via its public, any
