@@ -1275,6 +1275,11 @@ out:
 	invoke_tailcall_if(is_defined(ENABLE_HOST_FIREWALL),
 			   CILIUM_CALL_DIRECT_NODEPORT_NAT,
 			   tail_handle_nat_fwd);
+	/* If we cleanup cilium state, don't drop-all upon tail
+	 * call failure when map is removed from bpf fs.
+	 */
+	if (ret == DROP_MISSED_TAIL_CALL)
+		ret = CTX_ACT_OK;
 	if (IS_ERR(ret))
 		goto out_drop;
 #endif /* ENABLE_NAT_FWD */
