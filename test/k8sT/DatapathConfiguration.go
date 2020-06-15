@@ -308,10 +308,14 @@ var _ = Describe("K8sDatapathConfig", func() {
 		})
 
 		It("Check connectivity with automatic direct nodes routes", func() {
-			deploymentManager.DeployCilium(map[string]string{
+			options := map[string]string{
 				"global.tunnel":               "disabled",
 				"global.autoDirectNodeRoutes": "true",
-			}, DeployCiliumOptionsAndDNS)
+			}
+			if helpers.RunsWithKubeProxy() {
+				options["global.masquerade"] = "false"
+			}
+			deploymentManager.DeployCilium(options, DeployCiliumOptionsAndDNS)
 
 			Expect(testPodConnectivityAcrossNodes(kubectl)).Should(BeTrue(), "Connectivity test between nodes failed")
 			if helpers.RunsOnNetNextOr419Kernel() {
@@ -322,12 +326,16 @@ var _ = Describe("K8sDatapathConfig", func() {
 		})
 
 		It("Check direct connectivity with per endpoint routes", func() {
-			deploymentManager.DeployCilium(map[string]string{
+			options := map[string]string{
 				"global.tunnel":                 "disabled",
 				"global.autoDirectNodeRoutes":   "true",
 				"global.endpointRoutes.enabled": "true",
 				"global.ipv6.enabled":           "false",
-			}, DeployCiliumOptionsAndDNS)
+			}
+			if helpers.RunsWithKubeProxy() {
+				options["global.masquerade"] = "false"
+			}
+			deploymentManager.DeployCilium(options, DeployCiliumOptionsAndDNS)
 
 			Expect(testPodConnectivityAcrossNodes(kubectl)).Should(BeTrue(), "Connectivity test between nodes failed")
 		})
